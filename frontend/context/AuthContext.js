@@ -14,11 +14,17 @@ export const AuthProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      const json = await AsyncStorage.getItem('user');
-      if (json) setUser(JSON.parse(json));
-    } catch (err) {
-      console.log(err);
+    const json = await AsyncStorage.getItem('user');
+    if (json) {
+      const savedUser = JSON.parse(json);
+      setUser(savedUser);          // update context
+      console.log('User loaded:', savedUser);
+    } else {
+      console.log('No user found in storage');
     }
+  } catch (err) {
+    console.log('Error loading user:', err);
+  }
   };
 
   const login = async (email, password) => {
@@ -53,7 +59,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, setUser, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

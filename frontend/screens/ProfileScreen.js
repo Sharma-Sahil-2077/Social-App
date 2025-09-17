@@ -1,41 +1,50 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import PostCard from '../components/PostCard';
 
 export default function ProfileScreen() {
-  const { user, logout } = useContext(AuthContext);
-  const [username, setUsername] = useState(user.username);
-  const [bio, setBio] = useState(user.bio || '');
-  const [posts, setPosts] = useState([]);
+  const { user, setUser, logout } = useContext(AuthContext); // include setUser
+  const [username, setUsername] = useState(user?.username || '');
+  const [bio, setBio] = useState(user?.bio || '');
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const tk = user?.token;
 
-  const fetchPosts = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`http://localhost:5000/api/posts/user/${user._id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setPosts(res.data);
-    } catch (err) {
-      console.log(err.response?.data || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Verify user / token on entering screen
   useEffect(() => {
-    fetchPosts();
+    const verifyUser = async () => {
+      if (!tk) {
+        logout();
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await axios.get('http://192.168.29.31:4000/api/users/me', {
+          headers: { token: tk },
+        });
+        setUser({ ...user, ...res.data }); // update context user
+        setUsername(res.data.username);
+        setBio(res.data.bio || '');
+      } catch (err) {
+        console.log('Token verification failed or user not found:', err.response?.data || err.message);
+        logout();
+      } finally {
+        setLoading(false);
+      }
+    };
+    verifyUser();
   }, []);
 
   const handleUpdate = async () => {
     setUpdating(true);
     try {
-      await axios.put(`http://localhost:5000/api/users/${user._id}`, { username, bio }, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      const res = await axios.put(
+        'http://192.168.29.31:4000/api/users/me',
+        { username, bio },
+        { headers: { token: tk } }
+      );
+      setUser({ ...user, ...res.data });
     } catch (err) {
       console.log(err.response?.data || err.message);
     } finally {
@@ -53,8 +62,17 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={{width:'100%', height:'40%', alignItems:'center' , justifyContent:'center',  backgroundColor:'#fff'}}>
+          <Image
+            style={{ height: '90%', width: '90%', borderRadius: 5, padding:'5%',borderRadius:10}}
+            source={{ uri: 'https://picsum.photos/400' }}
+          />
+
+          <View>
+          </View>
+      </View>
       <View style={styles.profileCard}>
-        <Text style={styles.title}>Profile</Text>
+        {/* <Text style={styles.title}>Profile</Text> */}
         <Text style={styles.label}>Username</Text>
         <TextInput style={styles.input} value={username} onChangeText={setUsername} />
 
@@ -69,13 +87,6 @@ export default function ProfileScreen() {
           <Text style={styles.buttonText}>Logout</Text>
         </TouchableOpacity>
       </View>
-
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostCard post={item} onLike={() => {}} onComment={() => {}} />}
-        ListEmptyComponent={<Text style={styles.emptyText}>No posts yet</Text>}
-      />
     </View>
   );
 }
@@ -89,6 +100,5 @@ const styles = StyleSheet.create({
   updateButton: { backgroundColor: '#28a745', padding: 12, borderRadius: 8, marginBottom: 8, alignItems: 'center' },
   logoutButton: { backgroundColor: '#dc3545', padding: 12, borderRadius: 8, alignItems: 'center' },
   buttonText: { color: '#fff', fontWeight: '600' },
-  emptyText: { textAlign: 'center', color: '#555', marginTop: 20 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
