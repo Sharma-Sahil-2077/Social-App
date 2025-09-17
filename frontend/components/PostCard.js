@@ -28,7 +28,7 @@ export default function PostCard({ post, onLike, onDelete }) {
   const fetchLikes = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://192.168.29.31:4000/api/posts/${post._id}/likes`, {
+      const res = await axios.get(`https://ab-delta-six.vercel.app/api/posts/${post._id}/likes`, {
         headers: { token: user.token },
       });
       setLikes(res.data);
@@ -43,7 +43,7 @@ export default function PostCard({ post, onLike, onDelete }) {
   const fetchComments = async () => {
     setLoadingComments(true);
     try {
-      const res = await axios.get(`http://192.168.29.31:4000/api/posts/${post._id}/comments`, {
+      const res = await axios.get(`https://ab-delta-six.vercel.app/api/posts/${post._id}/comments`, {
         headers: { token: user.token },
       });
       setComments(res.data.comments || res.data);
@@ -59,7 +59,7 @@ export default function PostCard({ post, onLike, onDelete }) {
     if (!newComment.trim()) return;
     try {
       const res = await axios.post(
-        `http://192.168.29.31:4000/api/posts/${post._id}/comment`,
+        `https://ab-delta-six.vercel.app/api/posts/${post._id}/comment`,
         { text: newComment },
         { headers: { token: user.token } }
       );
@@ -78,7 +78,7 @@ export default function PostCard({ post, onLike, onDelete }) {
   const saveCommentEdit = async () => {
     try {
       const res = await axios.put(
-        `http://192.168.29.31:4000/api/posts/${post._id}/comments/${editingCommentId}`,
+        `https://ab-delta-six.vercel.app/api/posts/${post._id}/comments/${editingCommentId}`,
         { text: editCommentText },
         { headers: { token: user.token } }
       );
@@ -94,7 +94,7 @@ export default function PostCard({ post, onLike, onDelete }) {
   const deleteComment = async (commentId) => {
     try {
       const res = await axios.delete(
-        `http://192.168.29.31:4000/api/posts/${post._id}/comments/${commentId}`,
+        `https://ab-delta-six.vercel.app/api/posts/${post._id}/comments/${commentId}`,
         { headers: { token: user.token } }
       );
       setComments(res.data.comments || res.data);
@@ -107,7 +107,7 @@ export default function PostCard({ post, onLike, onDelete }) {
   const savePostEdit = async () => {
     try {
       const res = await axios.put(
-        `http://192.168.29.31:4000/api/posts/${post._id}`,
+        `https://ab-delta-six.vercel.app/api/posts/${post._id}`,
         { text: editPostText },
         { headers: { token: user.token } }
       );

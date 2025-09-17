@@ -18,7 +18,7 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// @desc Get all posts (feed)
+
 // @route GET /api/posts
 exports.getPosts = async (req, res) => {
   try {
@@ -31,7 +31,7 @@ exports.getPosts = async (req, res) => {
   }
 };
 
-// @desc Update post
+
 // @route PUT /api/posts/:id
 exports.updatePost = async (req, res) => {
   try {

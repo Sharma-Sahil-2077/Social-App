@@ -20,7 +20,7 @@ export default function ProfileScreen() {
       }
       setLoading(true);
       try {
-        const res = await axios.get('http://192.168.29.31:4000/api/users/me', {
+        const res = await axios.get('https://ab-delta-six.vercel.app/api/users/me', {
           headers: { token: tk },
         });
         setUser({ ...user, ...res.data }); // update context user
@@ -40,7 +40,7 @@ export default function ProfileScreen() {
     setUpdating(true);
     try {
       const res = await axios.put(
-        'http://192.168.29.31:4000/api/users/me',
+        'https://ab-delta-six.vercel.app/api/users/me',
         { username, bio },
         { headers: { token: tk } }
       );

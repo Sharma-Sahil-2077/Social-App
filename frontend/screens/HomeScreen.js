@@ -18,7 +18,7 @@ export default function HomeScreen() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://192.168.29.31:4000/api/posts', {
+      const res = await axios.get('https://ab-delta-six.vercel.app/api/posts', {
         headers: { token: tk },
       });
       setPosts(res.data);
@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
     try {
       await axios.post(
-        'http://192.168.29.31:4000/api/posts',
+        'https://ab-delta-six.vercel.app/api/posts',
         { text: newPostText },
         { headers: { token: tk } }
       );
@@ -52,7 +52,7 @@ export default function HomeScreen() {
   const handleLike = async (postId) => {
     try {
       await axios.post(
-        `http://192.168.29.31:4000/api/posts/${postId}/like`,
+        `https://ab-delta-six.vercel.app/api/posts/${postId}/like`,
         {},
         { headers: { token: tk } }
       );
@@ -64,7 +64,7 @@ export default function HomeScreen() {
 const handleDeletePost = async (postId) => {
     try {
       await axios.delete(
-        `http://192.168.29.31:4000/api/posts/${postId}`,
+        `https://ab-delta-six.vercel.app/api/posts/${postId}`,
         
         { headers: { token: tk } }
       );

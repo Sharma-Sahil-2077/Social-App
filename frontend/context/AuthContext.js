@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const res = await axios.post('http://192.168.29.31:4000/api/auth/signin', { email, password });
+      const res = await axios.post('https://ab-delta-six.vercel.app/api/auth/signin', { email, password });
       setUser(res.data);
       await AsyncStorage.setItem('user', JSON.stringify(res.data));
     } catch (err) {
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   const signup = async (username, email, password) => {
     setLoading(true);
     try {
-      const res = await axios.post('http://192.168.29.31:4000/api/auth/signup', { username, email, password });
+      const res = await axios.post('https://ab-delta-six.vercel.app/api/auth/signup', { username, email, password });
       setUser(res.data);
       await AsyncStorage.setItem('user', JSON.stringify(res.data));
     } catch (err) {
