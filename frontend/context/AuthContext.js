@@ -1,0 +1,60 @@
+import React, { createContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
+export const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const json = await AsyncStorage.getItem('user');
+      if (json) setUser(JSON.parse(json));
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const login = async (email, password) => {
+    setLoading(true);
+    try {
+      const res = await axios.post('http://192.168.29.31:4000/api/auth/signin', { email, password });
+      setUser(res.data);
+      await AsyncStorage.setItem('user', JSON.stringify(res.data));
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signup = async (username, email, password) => {
+    setLoading(true);
+    try {
+      const res = await axios.post('http://192.168.29.31:4000/api/auth/signup', { username, email, password });
+      setUser(res.data);
+      await AsyncStorage.setItem('user', JSON.stringify(res.data));
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setUser(null);
+    await AsyncStorage.removeItem('user');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

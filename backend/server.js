@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 4000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/socialapp';
-
+const MONGO_URI = process.env.MONGO_URI 
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
