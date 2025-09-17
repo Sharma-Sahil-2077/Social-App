@@ -3,25 +3,28 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, FlatList, TextI
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
-export default function PostCard({ post, onLike, onComment, onDelete }) {
-  const { user } = useContext(AuthContext); 
-  const [menuVisible, setMenuVisible] = useState(false);
+export default function PostCard({ post, onLike, onDelete }) {
+  const { user } = useContext(AuthContext);
 
+  const [menuVisible, setMenuVisible] = useState(false);
   const [likes, setLikes] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [likesVisible, setLikesVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [comments, setComments] = useState([]);
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
 
-  const [editingComment, setEditingComment] = useState(null);
-  const [editText, setEditText] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
+
+  const [editingPost, setEditingPost] = useState(false);
+  const [editPostText, setEditPostText] = useState(post.text);
 
   const isLiked = post.likes?.includes(user?._id);
 
-  // fetch likes
+  // -------------------- Likes --------------------
   const fetchLikes = async () => {
     setLoading(true);
     try {
@@ -37,14 +40,13 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
     }
   };
 
-  // fetch comments
   const fetchComments = async () => {
     setLoadingComments(true);
     try {
       const res = await axios.get(`http://192.168.29.31:4000/api/posts/${post._id}/comments`, {
         headers: { token: user.token },
       });
-      setComments(res.data);
+      setComments(res.data.comments || res.data);
       setCommentsVisible(true);
     } catch (err) {
       console.log(err.response?.data || err.message);
@@ -53,7 +55,6 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
     }
   };
 
-  // add comment
   const addComment = async () => {
     if (!newComment.trim()) return;
     try {
@@ -62,47 +63,56 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
         { text: newComment },
         { headers: { token: user.token } }
       );
-      setComments(res.data);
+      setComments(prev => [...prev, res.data]);
       setNewComment('');
     } catch (err) {
       console.log(err.response?.data || err.message);
     }
   };
 
-  // start editing
-  const startEditing = (comment) => {
-    setEditingComment(comment._id);
-    setEditText(comment.text);
+  const startEditingComment = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditCommentText(comment.text);
   };
 
-  // save edit
-  const saveEdit = async () => {
+  const saveCommentEdit = async () => {
     try {
-      await axios.put(
-        `http://192.168.29.31:4000/api/posts/${post._id}/comments/${editingComment}`,
-        { text: editText },
+      const res = await axios.put(
+        `http://192.168.29.31:4000/api/posts/${post._id}/comments/${editingCommentId}`,
+        { text: editCommentText },
         { headers: { token: user.token } }
       );
-      setComments((prev) =>
-        prev.map((c) =>
-          c._id === editingComment ? { ...c, text: editText } : c
-        )
-      );
-      setEditingComment(null);
-      setEditText('');
+ setComments(prev =>
+      prev.map(c => (c._id === editingCommentId ? res.data : c))
+    );      setEditingCommentId(null);
+      setEditCommentText('');
     } catch (err) {
       console.log(err.response?.data || err.message);
     }
   };
 
-  // delete comment
   const deleteComment = async (commentId) => {
     try {
-      await axios.delete(
+      const res = await axios.delete(
         `http://192.168.29.31:4000/api/posts/${post._id}/comments/${commentId}`,
         { headers: { token: user.token } }
       );
-      setComments((prev) => prev.filter((c) => c._id !== commentId));
+      setComments(res.data.comments || res.data);
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    }
+  };
+
+  // -------------------- Edit Post --------------------
+  const savePostEdit = async () => {
+    try {
+      const res = await axios.put(
+        `http://192.168.29.31:4000/api/posts/${post._id}`,
+        { text: editPostText },
+        { headers: { token: user.token } }
+      );
+      post.text = res.data.text; // update local post object
+      setEditingPost(false);
     } catch (err) {
       console.log(err.response?.data || err.message);
     }
@@ -110,76 +120,55 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
 
   return (
     <View style={styles.card}>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', width: '90%', alignItems: 'center', marginBottom: 8 }}>
-        <Image
-          style={{ height: 30, width: 30, borderRadius: 5, marginRight: 8 }}
-          source={{ uri: 'https://i.pravatar.cc/40' }}
-        />
+      <View style={styles.header}>
+        <Image style={styles.avatar} source={{ uri: 'https://i.pravatar.cc/40' }} />
         <Text style={styles.username}>{post.userId.username}</Text>
-
-        <View style={styles.right}>
-          <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
-            <Text style={styles.menuButton}>⋮</Text>
+        {post.userId._id === user._id && (
+          <TouchableOpacity style={styles.menuBtn} onPress={() => setMenuVisible(!menuVisible)}>
+            <Text style={{fontSize:30 , justifyContent:'center',}}>⋮</Text>
           </TouchableOpacity>
-          {menuVisible && (
-            <View style={styles.menu}>
-              <TouchableOpacity onPress={() => { setMenuVisible(false); onDelete(post._id); }}>
-                <Text style={styles.menuItem}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        )}
       </View>
 
-      {/* Post text */}
-      <Text style={styles.text}>{post.text}</Text>
+      {menuVisible && editingPost === false && (
+        <View style={styles.menu}>
+          <TouchableOpacity onPress={() => setEditingPost(true)}>
+            <Text style={styles.menuItem}>Edit Post</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => onDelete(post._id)}>
+            <Text style={styles.menuItem}>Delete Post</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      {/* Actions */}
+      {editingPost ? (
+        <View style={{ flexDirection: 'row', marginVertical: 8 }}>
+          <TextInput
+            style={styles.editInput}
+            value={editPostText}
+            onChangeText={setEditPostText}
+          />
+          <TouchableOpacity onPress={savePostEdit} style={styles.saveBtn}>
+            <Text style={{ color: '#fff' }}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <Text style={styles.text}>{post.text}</Text>
+      )}
+
       <View style={styles.actions}>
-        {/* Like */}
         <TouchableOpacity onPress={() => onLike(post._id)}>
-          <Text style={[styles.actionText, { color: isLiked ? '#007bff' : '#555' }]}>
-            {isLiked ? 'Liked ' : 'Like'}{' '}
-            <Text onPress={fetchLikes} style={{ color: 'black' }}>
-              ({post.likes?.length || 0} {post.likes?.length === 1 ? 'like' : 'likes'})
-            </Text>
+          <Text style={{ color: isLiked ? '#007bff' : '#555' }}>
+            {isLiked ? 'Liked' : 'Like'} ({post.likes?.length || 0})
           </Text>
         </TouchableOpacity>
 
-        {/* Comments */}
         <TouchableOpacity onPress={fetchComments}>
-          <Text style={styles.actionText}>
-            Comments ({post.comments?.length || 0})
-          </Text>
+          <Text style={{ color: '#555' }}>Comments ({post.comments?.length || 0})</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Likes Modal */}
-      <Modal transparent visible={likesVisible} animationType="fade" onRequestClose={() => setLikesVisible(false)}>
-        <View style={styles.overlay}>
-          <View style={styles.popup}>
-            <Text style={styles.popupTitle}>Likes</Text>
-            {loading ? (
-              <ActivityIndicator size="large" color="blue" />
-            ) : (
-              <FlatList
-                data={likes}
-                keyExtractor={(item) => item._id}
-                renderItem={({ item }) => (
-                  <Text style={styles.userItem}>{item.username}</Text>
-                )}
-                ListEmptyComponent={<Text style={styles.empty}>No likes yet</Text>}
-              />
-            )}
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setLikesVisible(false)}>
-              <Text style={styles.closeText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Comments Modal */}
+      {/* COMMENTS MODAL */}
       <Modal transparent visible={commentsVisible} animationType="slide" onRequestClose={() => setCommentsVisible(false)}>
         <View style={styles.overlay}>
           <View style={styles.popup}>
@@ -188,34 +177,30 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
               <ActivityIndicator size="large" color="blue" />
             ) : (
               <FlatList
-                style={styles.list}
                 data={comments}
                 keyExtractor={(item) => item._id}
                 renderItem={({ item }) => (
                   <View style={styles.commentItem}>
                     <Text style={styles.commentUser}>{item.userId.username}</Text>
 
-                    {editingComment === item._id ? (
+                    {editingCommentId === item._id ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <TextInput
                           style={styles.editInput}
-                          value={editText}
-                          onChangeText={setEditText}
+                          value={editCommentText}
+                          onChangeText={setEditCommentText}
                         />
-                        <TouchableOpacity onPress={saveEdit}>
-                          <Text style={styles.saveBtn}>Save</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setEditingComment(null)}>
-                          <Text style={{ color: 'gray', marginLeft: 8 }}>Cancel</Text>
+                        <TouchableOpacity onPress={saveCommentEdit} style={styles.saveBtn}>
+                          <Text style={{ color: '#fff' }}>Save</Text>
                         </TouchableOpacity>
                       </View>
                     ) : (
                       <Text style={styles.commentText}>{item.text}</Text>
                     )}
 
-                    {item.userId._id === user._id && editingComment !== item._id && (
+                    {item.userId._id === user._id && editingCommentId !== item._id && (
                       <View style={styles.commentActions}>
-                        <TouchableOpacity onPress={() => startEditing(item)}>
+                        <TouchableOpacity onPress={() => startEditingComment(item)}>
                           <Text style={styles.editBtn}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => deleteComment(item._id)}>
@@ -229,7 +214,6 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
               />
             )}
 
-            {/* Add new comment */}
             <View style={styles.commentInputRow}>
               <TextInput
                 style={styles.commentInput}
@@ -242,7 +226,7 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setCommentsVisible(false)}>
+            <TouchableOpacity onPress={() => setCommentsVisible(false)} style={styles.closeBtn}>
               <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -254,32 +238,30 @@ export default function PostCard({ post, onLike, onComment, onDelete }) {
 
 const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', padding: 16, borderRadius: 10, marginBottom: 12, elevation: 3 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  avatar: { width: 30, height: 30, borderRadius: 5, marginRight: 8 },
   username: { fontWeight: 'bold', fontSize: 16 },
+  menuBtn: { marginLeft: 'auto',height:30, width:30,justifyContent:'center', alignItems:'center' ,borderRadius:10 },
+  menu: { position: 'absolute', top: 35,  right: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: 5, zIndex: 100, elevation: 5 },
+  menuItem: { padding: 10 },
   text: { color: '#333', marginVertical: 8 },
-  right: { position: 'absolute', right: 0 },
-  menuButton: { fontSize: 24, fontWeight: 'bold', paddingHorizontal: 8 },
-  menu: { position: 'absolute', top: 30, right: 0, backgroundColor: '#fff', width: 100, borderWidth: 1, borderColor: '#ccc', borderRadius: 5, elevation: 5 },
-  menuItem: { padding: 10, fontSize: 16 },
   actions: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 5 },
-  actionText: { fontWeight: '600', color: '#555' },
-  liked: { color: '#007bff' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  popup: { backgroundColor: '#fff', padding: 20, borderRadius: 10, width: '90%', maxHeight: '80%' },
-  popupTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  userItem: { padding: 8, borderBottomWidth: 1, borderColor: '#eee' },
-  empty: { textAlign: 'center', color: '#555', marginTop: 20 },
-  closeBtn: { marginTop: 10, backgroundColor: '#007bff', padding: 10, borderRadius: 5, alignItems: 'center' },
-  closeText: { color: '#fff' },
-  commentInputRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  commentInput: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 8 },
-  sendBtn: { marginLeft: 10, backgroundColor: '#28a745', padding: 10, borderRadius: 5 },
-  sendText: { color: '#fff', fontWeight: '600' },
+  popup: { backgroundColor: '#fff', padding: 16, borderRadius: 10, width: '90%', maxHeight: '80%' },
+  popupTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
   commentItem: { marginBottom: 10, borderBottomWidth: 1, borderColor: '#ddd', paddingBottom: 5 },
   commentUser: { fontWeight: 'bold' },
   commentText: { color: '#333', marginVertical: 4 },
   commentActions: { flexDirection: 'row', marginTop: 4 },
   editBtn: { color: 'blue', marginRight: 10 },
   deleteBtn: { color: 'red' },
-  editInput: { borderWidth: 1, borderColor: '#ccc', flex: 1, padding: 5, marginRight: 5 },
-  saveBtn: { color: 'green', marginLeft: 8 },
+  commentInputRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  commentInput: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 8 },
+  sendBtn: { marginLeft: 10, backgroundColor: '#28a745', padding: 10, borderRadius: 5 },
+  sendText: { color: '#fff', fontWeight: '600' },
+  closeBtn: { marginTop: 10, backgroundColor: '#ccc', padding: 10, borderRadius: 5, alignItems: 'center' },
+  closeText: { color: '#000' },
+  editInput: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 5 },
+  saveBtn: { marginLeft: 8, padding: 8, backgroundColor: '#007bff', borderRadius: 5, justifyContent: 'center', alignItems: 'center' },
+  empty: { textAlign: 'center', color: '#777', marginTop: 20 },
 });

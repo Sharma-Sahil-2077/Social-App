@@ -70,6 +70,30 @@ exports.deletePost = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+exports.updatePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text } = req.body;
+
+    const post = await Post.findById(id)
+      .populate('userId', 'username')
+      .populate('comments.userId', 'username');
+
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    // Ownership check
+    if (post.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    post.text = text || post.text;
+    await post.save();
+
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 exports.likePost = async (req, res) => {

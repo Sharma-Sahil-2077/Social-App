@@ -97,15 +97,15 @@ const handleDeletePost = async (postId) => {
     <View style={styles.container}>
       
       
-        <View style ={{ height:'5%', width:'100%', marginBottom:5, justifyContent: 'space-between', flexDirection:'row', gap:10, marginTop:'8%' ,}}>
+        <View style ={{ height:'10%', width:'100%', marginBottom:5, justifyContent: 'space-between', flexDirection:'row', gap:10, marginTop:'8%' ,}}>
           <TouchableOpacity
-              style={{ padding: 10, font:'black', fontWeight:20, borderRadius: 5 }}
+              style={{ padding: 10, font:'black', fontWeight:20, borderRadius: 5, }}
             >
-              <Text style={{ color: 'slate-600' }}>Home</Text>
+              <Text style={{ color: 'slate-600',height:'100%', fontSize:50, fontWeight:'light' }}>Home</Text>
             </TouchableOpacity>
             <TouchableOpacity  
               onPress={() => navigation.navigate('Profile')}
-              style={{ padding: 10, justifyContent:'center', backgroundColor: '#007bff', borderRadius: 10 , width:'auto',height:'auto' }}
+              style={{ padding: 10, justifyContent:'center', height:'60%', backgroundColor: '#007bff', borderRadius: 10 , width:'auto', }}
             >
               <Text style={{ color: '#fff' }}>Profile</Text>
             </TouchableOpacity>
