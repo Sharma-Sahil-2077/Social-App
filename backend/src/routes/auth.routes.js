@@ -1,9 +1,8 @@
 const express = require('express');
+const { signup, signin } = require('../controllers/auth.controller');
 const router = express.Router();
 
-// Temporary test route
-router.get('/', (req, res) => {
-  res.json({ message: 'Auth route works 🚀' });
-});
+router.post('/signup', signup);
+router.post('/signin', signin);
 
 module.exports = router;

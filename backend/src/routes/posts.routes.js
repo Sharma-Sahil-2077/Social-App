@@ -1,9 +1,12 @@
 const express = require('express');
+const { createPost, getPosts, updatePost, deletePost } = require('../controllers/posts.controller');
+const { protect } = require('../middleware/auth.middleware');
 const router = express.Router();
 
-// Temporary test route
-router.get('/', (req, res) => {
-  res.json({ message: 'Posts route works 🚀' });
-});
+// Protected routes
+router.post('/', protect, createPost);
+router.get('/', protect, getPosts);
+router.put('/:id', protect, updatePost);
+router.delete('/:id', protect, deletePost);
 
 module.exports = router;
